@@ -1,48 +1,24 @@
 """
-Database Schemas
+Database Schemas for Steadily.me
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a MongoDB collection. The collection name is the
+lowercased class name (e.g., Habit -> "habit").
 """
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 
-# Example schemas (replace with your own):
-
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr = Field(..., description="User email")
+    password_hash: str = Field(..., description="BCrypt password hash")
+    name: Optional[str] = Field(None, description="Display name")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Habit(BaseModel):
+    user_id: str = Field(..., description="Owner user id (stringified ObjectId)")
+    name: str = Field(..., min_length=1, max_length=100)
+    color: str = Field("from-emerald-500 to-green-500", description="Tailwind gradient e.g., 'from-rose-500 to-pink-500'")
+    weekly_goal: int = Field(3, ge=1, le=7)
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Completion(BaseModel):
+    user_id: str = Field(..., description="Owner user id")
+    habit_id: str = Field(..., description="Habit id (stringified ObjectId)")
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD")
